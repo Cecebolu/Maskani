@@ -2,17 +2,29 @@ package com.spit91.maskani.presentation.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AlternateEmail
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,8 +41,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -50,99 +65,172 @@ fun SignUpScreen(
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    val passwordTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
+    val passwordsMismatch = state.confirmPassword.isNotEmpty() && state.confirmPassword != state.password
 
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ){
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
         ) {
-            Text (
-                text = "Create your Maskani account",
-                style = MaterialTheme.typography.headlineMedium
-            )
+            // shorter header than Sign In, since this form has more fields
+            AuthHeader(tagline = "Join and find your next home", height = 220.dp)
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .offset(y = (-36).dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(
+                        text = "Sign Up",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Fill in your details to get started",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = state.name,
-                onValueChange = {viewModel.onNameChange(it)},
-                label = {Text("Full Name")},
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = !state.isLoading
-            )
+                    Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        shape = RoundedCornerShape(16.dp),
+                        value = state.name,
+                        onValueChange = {viewModel.onNameChange(it)},
+                        label = {Text("Full Name")},
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !state.isLoading
+                    )
 
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = state.email,
-                onValueChange = { viewModel.onEmailChange(it)},
-                label = {Text("Email Address")},
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = !state.isLoading
-            )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        shape = RoundedCornerShape(16.dp),
+                        value = state.username,
+                        onValueChange = { viewModel.onUsernameChange(it)},
+                        label = {Text("Username")},
+                        leadingIcon = { Icon(Icons.Default.AlternateEmail, contentDescription = null) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !state.isLoading
+                    )
 
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = state.password,
-                onValueChange = { viewModel.onPasswordChanged(it)},
-                label = {Text("Password")},
-                visualTransformation = if( passwordVisible) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = !state.isLoading,
-                trailingIcon = {
-                    val image = if(passwordVisible) {
-                        Icons.Filled.Visibility
-                    } else Icons.Filled.VisibilityOff
-                    val description = if(passwordVisible) "Hide password" else "Show password"
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    IconButton(onClick = {passwordVisible = !passwordVisible}) {
-                       Icon(imageVector = image, description)
+                    OutlinedTextField(
+                        shape = RoundedCornerShape(16.dp),
+                        value = state.email,
+                        onValueChange = { viewModel.onEmailChange(it)},
+                        label = {Text("Email Address")},
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !state.isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        shape = RoundedCornerShape(16.dp),
+                        value = state.password,
+                        onValueChange = { viewModel.onPasswordChanged(it)},
+                        label = {Text("Password")},
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        visualTransformation = passwordTransformation,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !state.isLoading,
+                        trailingIcon = {
+                            val image = if(passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                            val description = if(passwordVisible) "Hide password" else "Show password"
+
+                            IconButton(onClick = {passwordVisible = !passwordVisible}) {
+                               Icon(imageVector = image, description)
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        shape = RoundedCornerShape(16.dp),
+                        value = state.confirmPassword,
+                        onValueChange = { viewModel.onConfirmPasswordChanged(it)},
+                        label = {Text("Confirm Password")},
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                        visualTransformation = passwordTransformation,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        isError = passwordsMismatch,
+                        supportingText = if (passwordsMismatch) {{ Text("Passwords do not match") }} else null,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !state.isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    if (state.errorMessage != null){
+                        Text (
+                            text = state.errorMessage!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = { viewModel.signUp()},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !state.isLoading && state.name.isNotBlank() && state.username.isNotBlank() &&
+                            state.email.isNotBlank() && state.password.isNotBlank() && state.password == state.confirmPassword
+                    ){
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else{
+                            Text("Sign Up", style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
+            }
 
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (state.errorMessage != null){
-                Text (
-                    text = state.errorMessage!!,
-                    color = MaterialTheme.colorScheme.error,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Already have an account?",
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-            Button(
-                onClick = { viewModel.signUp()},
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = !state.isLoading && state.name.isNotBlank() && state.password.isNotBlank()
-            ){
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.height(24.dp)
-                    )
-                } else{
-                    Text("Sign Up")
+                TextButton(onClick = onNavigateBackToSignIn) {
+                    Text("Sign In", fontWeight = FontWeight.Bold)
                 }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            TextButton(onClick = onNavigateBackToSignIn){
-                Text("Already have an account? Sign In")
             }
         }
     }

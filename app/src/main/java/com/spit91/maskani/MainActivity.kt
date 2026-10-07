@@ -24,17 +24,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             // Apply your application's global design theme wrapper
-            MaterialTheme {
+            HomeSpotTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // 2. RENDER THE SCREEN: Inject the brain and pass the success callback logic
                     MaskaniApp()
                 }
-            }
-            HomeSpotTheme {
-                MaskaniApp()
             }
         }
     }

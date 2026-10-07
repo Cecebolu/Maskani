@@ -36,6 +36,12 @@ android {
         }
     }
 
+    // Compile for Java 17 using whichever JDK runs Gradle (Android Studio's bundled one)
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
     buildFeatures {
         compose = true
     }
@@ -44,13 +50,6 @@ android {
         resources {
             excludes += "META-INF/gradle/incremental.annotation.processors"
         }
-    }
-}
-
-// ➡️ AGP 9 standard configuration block for Java toolchains and targets
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -101,6 +100,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
 
     // Unit & UI Testing Modules
     testImplementation(libs.junit)

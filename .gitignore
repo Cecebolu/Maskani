@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# JVM crash logs and Kotlin cache
+hs_err_pid*.log
+replay_pid*.log
+.kotlin/

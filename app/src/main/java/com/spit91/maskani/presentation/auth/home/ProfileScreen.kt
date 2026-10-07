@@ -46,6 +46,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -57,6 +64,37 @@ fun ProfileScreen(
 ){
     //collect our UI state snapshots from the viewModel brain
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // opens the system photo picker (no storage permission needed) and hands the chosen image to the viewModel
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let { viewModel.onPhotoSelected(it) }
+    }
+
+    // load the profile from firestore every time this screen opens (e.g. coming back from Edit Profile)
+    LaunchedEffect(Unit) {
+        viewModel.loadUserProfile()
+    }
+
+    // confirmation popup before signing out
+    if (state.showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.setLogoutDialogVisible(false) },
+            title = { Text("Log Out") },
+            text = { Text("Are you sure you want to log out?") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmLogout() }) {
+                    Text("Log Out", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.setLogoutDialogVisible(false) }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     LaunchedEffect(state.isEditingProfile){
         if(state.isEditingProfile){
@@ -116,22 +154,75 @@ fun ProfileScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ){
                     Spacer(modifier = Modifier.height(8.dp))
-                    // adding the circular initial avatar frame
+
+                    state.errorMessage?.let { message ->
+                        Text(
+                            text = message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        )
+                    }
+                    // avatar: shows the profile photo if there is one, otherwise the initials. Tap to change it
                     Box(
                         modifier = Modifier
-                            .size(90.dp)
-                            .clip(androidx.compose.foundation.shape.CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
+                            .size(96.dp)
+                            .clickable(enabled = !state.isUploadingPhoto) {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
                     ){
-                        // automatically grab the first 2 characters of the user's name and make them uppercase
-                        val initials = state.user?.name?.take(2)?.uppercase() ?:""
-                        Text(
-                            text = initials,
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .align(Alignment.Center)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ){
+                            val photoUrl = state.user?.photoUrl.orEmpty()
+                            if (photoUrl.isNotBlank()) {
+                                AsyncImage(
+                                    model = photoUrl,
+                                    contentDescription = "Profile photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                // automatically grab the first 2 characters of the user's name and make them uppercase
+                                val initials = state.user?.name?.take(2)?.uppercase() ?:""
+                                Text(
+                                    text = initials,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (state.isUploadingPhoto) {
+                                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                            }
+                        }
+
+                        // small camera badge in the corner so users know the avatar is tappable
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .align(Alignment.BottomEnd)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ){
+                            Icon(
+                                imageVector = Icons.Default.PhotoCamera,
+                                contentDescription = "Change profile photo",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -147,7 +238,7 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = state.user?.email ?:"Maskani User",
+                        text = state.user?.email ?: "",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         style = MaterialTheme.typography.displaySmall,
@@ -186,7 +277,7 @@ fun ProfileScreen(
                     ProfileInfoField(
                         icon = androidx.compose.material.icons.Icons.Default.Email,
                         label = "Email Address",
-                        value = state.user?.email ?:"Maskani User"
+                        value = state.user?.email ?: ""
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -194,7 +285,7 @@ fun ProfileScreen(
                     ProfileInfoField(
                         icon = androidx.compose.material.icons.Icons.Default.Phone,
                         label = "Contact",
-                        value =  state.user?.contact ?:"Maskani User"
+                        value = state.user?.contact?.ifBlank { null } ?: "Not added yet"
                     )
                     Spacer(modifier = Modifier.height(20.dp))
 

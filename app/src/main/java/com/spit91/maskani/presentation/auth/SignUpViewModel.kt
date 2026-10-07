@@ -24,19 +24,29 @@ class SignUpViewModel @Inject constructor(
     fun onEmailChange(newValue: String) {
         _state.update{ it.copy(email = newValue, errorMessage = null)}
     }
+    fun onUsernameChange(newValue: String) {
+        _state.update{ it.copy(username = newValue, errorMessage = null)}
+    }
     fun onPasswordChanged(newValue: String){
         _state.update{ it.copy(password = newValue, errorMessage = null)}
     }
+    fun onConfirmPasswordChanged(newValue: String){
+        _state.update{ it.copy(confirmPassword = newValue, errorMessage = null)}
+    }
 
     fun signUp(){
-        val currentName = _state.value.name
-        val currentEmail = _state.value.email
-        val currentPassword = _state.value.password
+        val current = _state.value
 
         _state.update{ it.copy(isLoading = true, errorMessage = null)}
 
         viewModelScope.launch {
-            val result = signUpUseCase(currentEmail, currentPassword, currentName)
+            val result = signUpUseCase(
+                email = current.email,
+                password = current.password,
+                confirmPassword = current.confirmPassword,
+                name = current.name,
+                username = current.username
+            )
 
             result.onSuccess {authUser ->
                 _state.update{ it.copy(isLoading = false, isSuccess = true)}

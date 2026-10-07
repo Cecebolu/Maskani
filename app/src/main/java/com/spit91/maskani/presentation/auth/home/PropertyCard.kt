@@ -94,7 +94,7 @@ fun PropertyCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = unitTypeLabel(property.unitType as String),
+                        text = unitTypeLabel(property.unitType),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary
                     )

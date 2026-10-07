@@ -17,21 +17,21 @@ class SignInViewModel @Inject constructor(private val signInUseCase: SignInUseCa
     private val _state = MutableStateFlow(SignInState())
     val state: StateFlow<SignInState> = _state.asStateFlow()
 
-    fun onEmailChanged(newValue: String) {
-        _state.update { it.copy(email = newValue, errorMessage = null) }
+    fun onUsernameChanged(newValue: String) {
+        _state.update { it.copy(username = newValue, errorMessage = null) }
     }
     fun onPasswordChanged(newValue: String) {
         _state.update { it.copy(password = newValue, errorMessage = null) }
     }
 
     fun signIn() {
-        val currentEmail = _state.value.email
+        val currentUsername = _state.value.username
         val currentPassword = _state.value.password
 
         _state.update { it.copy(isLoading = true, errorMessage = null) }
 
         viewModelScope.launch {
-            val result = signInUseCase(currentEmail, currentPassword)
+            val result = signInUseCase(currentUsername, currentPassword)
 
             result.onSuccess { authUser ->
                 _state.update { it.copy(isLoading = false, isSuccess = true) }

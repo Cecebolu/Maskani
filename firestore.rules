@@ -1,0 +1,77 @@
+// Firestore security rules for Maskani.
+// This file is a copy for reference: rules only take effect after they are
+// pasted into Firebase console -> Firestore Database -> Rules and Published.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{userId} {
+      // you can read your own profile (also works when it doesn't exist yet)
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // you can create your own profile, with exactly these fields
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'username', 'email', 'contact', 'photoUrl']);
+
+      // you can change only name, contact and photo, never uid, username or email
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'contact', 'photoUrl']);
+
+      allow delete: if false;
+
+      // Each user's saved listings: private to that user
+      match /saved/{propertyId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.propertyId == propertyId
+          && request.resource.data.keys().hasOnly(['propertyId', 'savedAt']);
+      }
+    }
+
+    // Usernames: anyone can look one up (to check if it's taken, and to log in with it);
+    // you can only claim one for yourself, once. The email stored here must be your own login email.
+    match /usernames/{username} {
+      allow get: if true;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.keys().hasOnly(['uid', 'email']);
+      // only lets older accounts add their email once; uid can never change
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid
+        && !('email' in resource.data)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email']);
+      allow delete: if false;
+    }
+
+    // Viewing requests: buyers create and see only their own, and can only cancel them.
+    // Maskani staff change the status from the Firebase console (not limited by these rules).
+    match /viewingRequests/{requestId} {
+      allow create: if request.auth != null
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow read: if request.auth != null && resource.data.buyerId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.buyerId == request.auth.uid
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+
+      allow delete: if false;
+    }
+
+    match /properties/{propertyId} {
+      // signed-in users can read published listings only
+      allow read: if request.auth != null && resource.data.status == 'published';
+      // no writes from the app
+      allow write: if false;
+    }
+  }
+}

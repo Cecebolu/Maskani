@@ -98,7 +98,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "HomeSpot",
+                        text = "Maskani",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge
                     )
@@ -170,7 +170,7 @@ fun HomeScreen(
 
                 FilterDropDown(
                     label = "Location",
-                    selectedLabel = state.selectedPriceRange?.label,
+                    selectedLabel = state.selectedLocation,
                     allLabel = "All locations",
                     options = state.availableLocations,
                     optionLabel = { it },

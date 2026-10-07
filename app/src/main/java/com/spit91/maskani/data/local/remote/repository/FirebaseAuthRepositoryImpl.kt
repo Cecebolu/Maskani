@@ -49,7 +49,8 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
     // 2. SIGN IN: Converts Firebase's callback into a modern coroutine suspend function
     override suspend fun signInWithEmail(email: String, password: String): kotlin.Result<AuthUser> {
         return suspendCancellableCoroutine { continuation ->
-            firebaseAuth.signInWithEmailAndPassword(email, password)
+            // trim(): phone keyboards often add a trailing space, which Firebase rejects as "badly formatted"
+            firebaseAuth.signInWithEmailAndPassword(email.trim(), password)
                 .addOnSuccessListener { result ->
                     val user = result.user
                     if (user != null) {
@@ -75,7 +76,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
     // 3. SIGN UP: Creates a new user profile on Firebase servers
    override suspend fun signUpWithEmail(email: String, password: String, name: String): kotlin.Result<AuthUser> {
        return try {
-           val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+           val result = firebaseAuth.createUserWithEmailAndPassword(email.trim(), password).await()
            val user = result.user ?: return kotlin.Result.failure(Exception("User generation failed."))
            //save the name on to the auth account itself.
            // if this fails, sign up still succeeds because the name is also saved in the firestore profile
@@ -107,7 +108,7 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
     // 5. FORGOT PASSWORD: Sends a reset link to the user's email via Firebase
     override suspend fun sendPasswordResetEmail(email: String): kotlin.Result<Unit> {
         return suspendCancellableCoroutine { continuation ->
-            firebaseAuth.sendPasswordResetEmail(email)
+            firebaseAuth.sendPasswordResetEmail(email.trim())
                 .addOnSuccessListener {
                     continuation.resume(kotlin.Result.success(Unit))
                 }
@@ -120,5 +121,17 @@ class FirebaseAuthRepositoryImpl @Inject constructor(
     // 4. SIGN OUT: Completely tears down the active session tokens
     override suspend fun signOut() {
         firebaseAuth.signOut()
+    }
+
+    // 6. DELETE: Removes a just-created account when sign up can't be completed (e.g. username taken)
+    override suspend fun deleteCurrentUser(): kotlin.Result<Unit> {
+        return try {
+            firebaseAuth.currentUser?.delete()?.await()
+            kotlin.Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.spit91.maskani.presentation.navigation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -25,6 +26,8 @@ import androidx.navigation.compose.rememberNavController
 import com.spit91.maskani.presentation.auth.home.HomeScreen
 import com.spit91.maskani.presentation.auth.home.SavedScreen
 import com.spit91.maskani.presentation.auth.home.ProfileScreen
+import com.spit91.maskani.presentation.auth.home.detail.PropertyDetailScreen
+import com.spit91.maskani.presentation.auth.home.requests.MyRequestsScreen
 
 // FIX: Renamed from NavigationItem to ContainerTab to resolve the "Redeclaration" conflict!
 private sealed class ContainerTab(
@@ -34,6 +37,7 @@ private sealed class ContainerTab(
 ) {
     object HomeTab : ContainerTab(Screen.Home, "Explore", Icons.Default.Home)
     object SavedTab : ContainerTab(Screen.Saved, "Saved", Icons.Default.Favorite)
+    object ViewingsTab : ContainerTab(Screen.MyRequests, "Viewings", Icons.Default.CalendarMonth)
     object ProfileTab : ContainerTab(Screen.Profile, "Profile", Icons.Default.Person)
 }
 
@@ -50,6 +54,7 @@ fun MainContainerScreen(
     val bottomNavItems = listOf(
         ContainerTab.HomeTab,
         ContainerTab.SavedTab,
+        ContainerTab.ViewingsTab,
         ContainerTab.ProfileTab
     )
 
@@ -85,8 +90,30 @@ fun MainContainerScreen(
             startDestination = Screen.Home,
             modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
-            composable<Screen.Home> { HomeScreen() }
+            composable<Screen.Home> {
+                HomeScreen(
+                    onPropertyClick = { id -> bottomTabNavController.navigate(Screen.PropertyDetail(id)) }
+                )
+            }
+            composable<Screen.PropertyDetail> {
+                PropertyDetailScreen(
+                    onNavigateBack = { bottomTabNavController.popBackStack() },
+                    onViewMyRequests = {
+                        bottomTabNavController.navigate(Screen.MyRequests) {
+                            popUpTo(bottomTabNavController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
             composable<Screen.Saved> { SavedScreen() }
+            composable<Screen.MyRequests> {
+                MyRequestsScreen(
+                    onPropertyClick = { id -> bottomTabNavController.navigate(Screen.PropertyDetail(id)) }
+                )
+            }
             composable<Screen.Profile> {
                 ProfileScreen(
                 onLogoutSuccess = {

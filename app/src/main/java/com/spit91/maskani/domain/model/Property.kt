@@ -9,9 +9,8 @@ data class Property(
     val location: String = "",
     val imageUrls: List<String> = emptyList(),
     val status: String = "draft",
-) {
-    val unitType: Any
-}
+    val unitType: String = "",
+)
 
 object UnitType {
     const val APARTMENT = "apartment"

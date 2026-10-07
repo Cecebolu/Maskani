@@ -22,8 +22,14 @@ class FirestorePropertyRepositoryImpl @Inject constructor(
                 .get()
                 .await()
 
+            // skip documents with wrong field types (e.g. price saved as text) instead of failing the whole list
             val properties = snapshot.documents.mapNotNull{document ->
-                document.toObject(Property::class.java)?.copy(id = document.id)
+                try {
+                    document.toObject(Property::class.java)?.copy(id = document.id)
+                } catch (e: RuntimeException) {
+                    android.util.Log.e("PropertyRepo", "Skipping bad property ${document.id}: ${e.message}")
+                    null
+                }
             }
             Result.success(properties)
         } catch (e: CancellationException) {

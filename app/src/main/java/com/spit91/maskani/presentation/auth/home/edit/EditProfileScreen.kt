@@ -82,7 +82,7 @@ fun EditProfileScreen(
             ) {
                 Button(
                     onClick = {viewModel.SaveProfileChanges()},
-                    enabled = !state.isSaving,
+                    enabled = !state.isSaving && !state.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(55.dp),
@@ -156,6 +156,15 @@ fun EditProfileScreen(
                 fontWeight = FontWeight.Normal
             )
             Spacer(modifier = Modifier.height(24.dp))
+
+            state.errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
 
             Card(
                 modifier = Modifier

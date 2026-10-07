@@ -22,6 +22,7 @@ sealed interface Screen {
     @Serializable
     data class PropertyDetail(val propertyId: String) : Screen
     @Serializable data object Saved : Screen
+    @Serializable data object MyRequests : Screen
 
     @Serializable data object Profile : Screen
 
